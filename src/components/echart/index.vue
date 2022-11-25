@@ -11,6 +11,7 @@
 
 <script>
 import * as echarts from "echarts";
+from;
 export default {
   name: "echart",
   props: {
