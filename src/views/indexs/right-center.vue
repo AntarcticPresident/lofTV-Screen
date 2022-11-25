@@ -1,163 +1,150 @@
 <!--
  * @Author: daidai
- * @Date: 2022-03-01 15:51:43
+ * @Date: 2022-02-28 16:16:42
  * @LastEditors: Please set LastEditors
- * @LastEditTime: 2022-09-29 15:12:46
- * @FilePath: \web-pc\src\pages\big-screen\view\indexs\right-bottom.vue
+ * @LastEditTime: 2022-04-28 09:46:18
+ * @FilePath: \web-pc\src\pages\big-screen\view\indexs\left-center.vue
 -->
 <template>
-  <div class="right_bottom">
-    <dv-capsule-chart :config="config" style="width:100%;height:260px" />
-  </div>
+  <Echart
+    id="rightcenter"
+    :options="options"
+    class="left_center_inner"
+    v-if="pageflag"
+    ref="charts"
+  />
+  <Reacquire v-else @onclick="getData" style="line-height: 200px">
+    重新获取
+  </Reacquire>
 </template>
 
 <script>
-import { currentGET } from 'api/modules'
+import { currentGET } from "api/modules";
 export default {
   data() {
     return {
-      gatewayno: '',
-      config: {
-        showValue: true,
-        unit: "次",
-        data: []
+      options: {
+        axisPointer: {
+          show: false,
+        },
+        tooltip: {
+          show: true,
+        },
+        legend: {
+          data: [],
+        },
+        grid: {
+          left: "3%",
+          right: "4%",
+          bottom: "3%",
+          containLabel: true,
+        },
+        xAxis: [
+          {
+            type: "value",
+          },
+        ],
+        yAxis: [
+          {
+            type: "category",
+            axisTick: {
+              show: false,
+            },
+            data: [],
+          },
+        ],
+        series: [
+          {
+            name: "",
+            type: "bar",
+            label: {
+              show: true,
+              position: "inside",
+            },
+            emphasis: {
+              focus: "series",
+            },
+            data: [],
+          },
+        ],
       },
-
+      pageflag: true,
+      timer: null,
     };
   },
   created() {
-    this.getData()
-
+    this.getData();
+    // this.init();
   },
-  computed: {
-  },
-  mounted() { },
+  mounted() {},
   beforeDestroy() {
-    this.clearData()
+    this.clearData();
   },
   methods: {
     clearData() {
       if (this.timer) {
-        clearInterval(this.timer)
-        this.timer = null
+        clearInterval(this.timer);
+        this.timer = null;
       }
+    },
+    getData() {
+      this.pageflag = true;
+      // this.pageflag =false
+
+      currentGET("big1").then((res) => {
+        //只打印一次
+        if (!this.timer) {
+          console.log("接口级QPS环比昨天", res);
+        }
+        if (res.success) {
+          this.options.series[0].data = [];
+          this.options.yAxis[0].data = [];
+          for (let el in res.data) {
+            this.options.series[0].data.push(res.data[el]);
+            this.options.yAxis[0].data.push({
+              value: el,
+              textStyle: {
+                color: "gray",
+              },
+            });
+          }
+          this.switper();
+        } else {
+          this.pageflag = false;
+          this.$Message({
+            text: res.msg,
+            type: "warning",
+          });
+        }
+      });
     },
     //轮询
     switper() {
       if (this.timer) {
-        return
+        return;
       }
       let looper = (a) => {
-        this.getData()
+        this.getData();
       };
-      this.timer = setInterval(looper, this.$store.state.setting.echartsAutoTime);
+      this.timer = setInterval(
+        looper,
+        this.$store.state.setting.echartsAutoTime
+      );
+      // let myChart = this.$refs.charts.chart;
+      // myChart.on("mouseover", (params) => {
+      //   this.clearData();
+      // });
+      // myChart.on("mouseout", (params) => {
+      //   this.timer = setInterval(
+      //     looper,
+      //     this.$store.state.setting.echartsAutoTime
+      //   );
+      // });
     },
-    getData() {
-      this.pageflag = true
-      // this.pageflag =false
-      currentGET('big7', { gatewayno: this.gatewayno }).then(res => {
-
-        if (!this.timer) {
-          console.log('报警排名', res);
-        }
-        if (res.success) {
-          this.config = {
-            ...this.config,
-            data: res.data
-          }
-          this.switper()
-        } else {
-          this.pageflag = false
-          this.srcList = []
-          this.$Message({
-            text: res.msg,
-            type: 'warning'
-          })
-        }
-      })
-    },
+    // init() {
+    //   this.options.series[0].data = [];
+    // },
   },
 };
 </script>
-<style lang='scss' scoped>
-.list_Wrap {
-  height: 100%;
-  overflow: hidden;
-  :deep(.kong)   {
-    width: auto;
-  }
-}
-
-.sbtxSwiperclass {
-  .img_wrap {
-    overflow-x: auto;
-  }
-
-}
-
-.right_bottom {
-  box-sizing: border-box;
-  padding: 0 16px;
-
-  .searchform {
-    height: 80px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    .searchform_item {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-
-      label {
-        margin-right: 10px;
-        color: rgba(255, 255, 255, 0.8);
-      }
-
-      button {
-        margin-left: 30px;
-      }
-
-      input {}
-    }
-  }
-
-  .img_wrap {
-    display: flex;
-    // justify-content: space-around;
-    box-sizing: border-box;
-    padding: 0 0 20px;
-    // overflow-x: auto;
-
-    li {
-      width: 105px;
-      height: 137px;
-      border-radius: 6px;
-      overflow: hidden;
-      cursor: pointer;
-      // background: #84ccc9;
-      // border: 1px solid #ffffff;
-      overflow: hidden;
-      flex-shrink: 0;
-      margin: 0 10px;
-
-      img {
-        flex-shrink: 0;
-      }
-    }
-
-
-
-
-  }
-
-  .noData {
-    width: 100%;
-    line-height: 100px;
-    text-align: center;
-    color: rgb(129, 128, 128);
-
-  }
-}
-</style>
+<style lang="scss" scoped></style>

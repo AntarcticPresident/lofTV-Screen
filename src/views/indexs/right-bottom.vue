@@ -1,194 +1,244 @@
 <!--
  * @Author: daidai
- * @Date: 2022-03-01 15:27:58
+ * @Date: 2022-02-28 16:16:42
  * @LastEditors: Please set LastEditors
- * @LastEditTime: 2022-05-07 11:24:14
- * @FilePath: \web-pc\src\pages\big-screen\view\indexs\right-center.vue
+ * @LastEditTime: 2022-04-28 09:46:18
+ * @FilePath: \web-pc\src\pages\big-screen\view\indexs\left-center.vue
 -->
 <template>
-  <div v-if="pageflag" class="right_center_wrap beautify-scroll-def" :class="{ 'overflow-y-auto': !sbtxSwiperFlag }">
-    <component :is="components" :data="list" :class-option="defaultOption">
-      <ul class="right_center ">
-        <li class="right_center_item" v-for="(item, i) in list" :key="i">
-          <span class="orderNum">{{ i + 1 }}</span>
-          <div class="inner_right">
-            <div class="dibu"></div>
-            <div class="flex">
-              <div class="info">
-                <span class="labels ">设备ID：</span>
-                <span class="contents zhuyao"> {{ item.gatewayno }}</span>
-              </div>
-              <div class="info">
-                <span class="labels">型号：</span>
-                <span class="contents "> {{ item.terminalno }}</span>
-              </div>
-              <div class="info">
-                <span class="labels">告警值：</span>
-                <span class="contents warning"> {{ item.alertvalue | montionFilter }}</span>
-              </div>
-            </div>
-
-
-            <div class="flex">
-
-              <div class="info">
-                <span class="labels"> 地址：</span>
-                <span class="contents ciyao" style="font-size:12px"> {{ item.provinceName }}/{{ item.cityName }}/{{ item.countyName }}</span>
-              </div>
-              <div class="info time">
-                <span class="labels">时间：</span>
-                <span class="contents" style="font-size:12px"> {{ item.createtime }}</span>
-              </div>
-
-            </div>
-            <div class="flex">
-
-              <div class="info">
-                <span class="labels">报警内容：</span>
-                <span class="contents ciyao" :class="{ warning: item.alertdetail }"> {{ item.alertdetail || '无'
-                }}</span>
-              </div>
-            </div>
-          </div>
-        </li>
-      </ul>
-    </component>
-  </div>
-  <Reacquire v-else @onclick="getData" style="line-height:200px" />
-
+  <Echart
+    id="rightbottom"
+    :options="options"
+    class="left_center_inner"
+    v-if="pageflag"
+    ref="charts"
+  />
+  <Reacquire v-else @onclick="getData" style="line-height: 200px">
+    重新获取
+  </Reacquire>
 </template>
 
 <script>
-import { currentGET } from 'api/modules'
-import vueSeamlessScroll from 'vue-seamless-scroll'  // vue2引入方式
-import Kong from '../../components/kong.vue'
+import { currentGET } from "api/modules";
 export default {
-  components: { vueSeamlessScroll, Kong },
-
   data() {
     return {
-      list: [],
+      options: {},
+      countUserNumData: {
+        lockNum: 0,
+        onlineNum: 0,
+        offlineNum: 0,
+        totalNum: 0,
+      },
       pageflag: true,
-      defaultOption: {
-        ...this.$store.state.setting.defaultOption,
-        limitMoveNum: 3, 
-        singleHeight: 250, 
-        step:0,
-      }
-
+      timer: null,
     };
   },
-  computed: {
-    sbtxSwiperFlag() {
-      let ssyjSwiper = this.$store.state.setting.ssyjSwiper
-      if (ssyjSwiper) {
-        this.components = vueSeamlessScroll
-      } else {
-        this.components = Kong
-      }
-      return ssyjSwiper
-    }
-  },
   created() {
-    this.getData()
+    // this.getData();
+    this.init();
   },
-
-  mounted() { },
+  mounted() {},
+  beforeDestroy() {
+    this.clearData();
+  },
   methods: {
-    getData() {
-      this.pageflag = true
-      // this.pageflag =false
-      currentGET('big5', { limitNum: 50 }).then(res => {
-        console.log('实时预警', res);
-        if (res.success) {
-          this.list = res.data.list
-          let timer = setTimeout(() => {
-              clearTimeout(timer)
-              this.defaultOption.step=this.$store.state.setting.defaultOption.step
-          }, this.$store.state.setting.defaultOption.waitTime);
-        } else {
-          this.pageflag = false
-          this.$Message.warning(res.msg)
-        }
-      })
+    clearData() {
+      if (this.timer) {
+        clearInterval(this.timer);
+        this.timer = null;
+      }
     },
+    getData() {
+      this.pageflag = true;
+      // this.pageflag =false
 
+      currentGET("big1").then((res) => {
+        //只打印一次
+        if (!this.timer) {
+          console.log("设备总览", res);
+        }
+        if (res.success) {
+          this.countUserNumData = res.data;
+          this.$nextTick(() => {
+            this.init();
+            this.switper();
+          });
+        } else {
+          this.pageflag = false;
+          this.$Message({
+            text: res.msg,
+            type: "warning",
+          });
+        }
+      });
+    },
+    //轮询
+    switper() {
+      if (this.timer) {
+        return;
+      }
+      let looper = (a) => {
+        this.getData();
+      };
+      this.timer = setInterval(
+        looper,
+        this.$store.state.setting.echartsAutoTime
+      );
+      let myChart = this.$refs.charts.chart;
+      myChart.on("mouseover", (params) => {
+        this.clearData();
+      });
+      myChart.on("mouseout", (params) => {
+        this.timer = setInterval(
+          looper,
+          this.$store.state.setting.echartsAutoTime
+        );
+      });
+    },
+    init() {
+      let total = this.countUserNumData.totalNum;
+      let colors = ["#ECA444", "#33A1DB", "#56B557"];
+      let piedata = {
+        name: "用户总览",
+        type: "pie",
+        radius: ["42%", "65%"],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 4,
+          borderColor: "rgba(0,0,0,0)",
+          borderWidth: 2,
+        },
+
+        color: colors,
+        data: [
+          // {
+          //   value: 0,
+          //   name: "告警",
+          //   label: {
+          //     shadowColor: colors[0],
+          //   },
+          // },
+          {
+            value: this.countUserNumData.lockNum,
+            name: "锁定",
+            label: {
+              shadowColor: colors[0],
+            },
+          },
+          {
+            value: this.countUserNumData.onlineNum,
+            name: "在线",
+            label: {
+              shadowColor: colors[2],
+            },
+          },
+          {
+            value: this.countUserNumData.offlineNum,
+            name: "离线",
+            label: {
+              shadowColor: colors[1],
+            },
+          },
+        ],
+      };
+      this.options = {
+        axisPointer: {
+          show: false,
+        },
+        tooltip: {
+          show: true,
+          // trigger: "axis",
+          // axisPointer: {
+          //   type: "shadow",
+          // },
+        },
+        legend: {
+          data: [],
+        },
+        grid: {
+          left: "3%",
+          right: "4%",
+          bottom: "3%",
+          containLabel: true,
+        },
+        xAxis: [
+          {
+            type: "value",
+          },
+        ],
+        yAxis: [
+          {
+            type: "category",
+            axisTick: {
+              show: false,
+            },
+            data: [
+              {
+                value: "支付-优惠券接口",
+                textStyle: {
+                  color: "gray",
+                },
+              },
+
+              {
+                value: "支付-电视端下单接口",
+                textStyle: {
+                  color: "gray",
+                },
+              },
+              {
+                value: "支付-移动端下单接口",
+                textStyle: {
+                  color: "gray",
+                },
+              },
+              {
+                value: "支付-自动续费刷新状态接口",
+                textStyle: {
+                  color: "gray",
+                },
+              },
+              {
+                value: "电商-组合套餐页获取接口",
+                textStyle: {
+                  color: "gray",
+                },
+              },
+              {
+                value: "电商-vipinfo接口",
+                textStyle: {
+                  color: "gray",
+                },
+              },
+              {
+                value: "阿里云-电商-组合套餐页获取接口",
+                textStyle: {
+                  color: "gray",
+                },
+              },
+              {
+                value: "阿里云-电商-vipinfo接口",
+                textStyle: {
+                  color: "gray",
+                },
+              },
+            ],
+          },
+        ],
+        series: [
+          {
+            type: "bar",
+            label: {
+              show: true,
+              position: "inside",
+            },
+            data: [9, 10, 14, -10, -3, 7, -4, 9],
+          },
+        ],
+      };
+    },
   },
 };
 </script>
-<style lang='scss' scoped>
-.right_center {
-  width: 100%;
-  height: 100%;
-
-  .right_center_item {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: auto;
-    padding: 10px;
-    font-size: 14px;
-    color: #fff;
-
-    .orderNum {
-      margin: 0 20px 0 -20px;
-    }
-
-
-    .inner_right {
-      position: relative;
-      height: 100%;
-      width: 400px;
-      flex-shrink: 0;
-      line-height: 1.5;
-
-      .dibu {
-        position: absolute;
-        height: 2px;
-        width: 104%;
-        background-image: url("../../assets/img/zuo_xuxian.png");
-        bottom: -12px;
-        left: -2%;
-        background-size: cover;
-      }
-    }
-
-    .info {
-      margin-right: 10px;
-      display: flex;
-      align-items: center;
-
-      .labels {
-        flex-shrink: 0;
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.6);
-      }
-
-      .zhuyao {
-        color: $primary-color;
-        font-size: 15px;
-      }
-
-      .ciyao {
-        color: rgba(255, 255, 255, 0.8);
-      }
-
-      .warning {
-        color: #E6A23C;
-        font-size: 15px;
-      }
-    }
-
-  }
-}
-
-.right_center_wrap {
-  overflow: hidden;
-  width: 100%;
-  height: 250px;
-}
-
-.overflow-y-auto {
-  overflow-y: auto;
-}
-</style>
+<style lang="scss" scoped></style>

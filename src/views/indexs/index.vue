@@ -10,46 +10,55 @@
     <div class="contetn_left">
       <div class="pagetab">
         <!-- <div class="item">实时监测</div> -->
-        
       </div>
-      <ItemWrap class="contetn_left-top contetn_lr-item" title="设备总览">
-        <LeftTop/>
-    
+      <ItemWrap
+        class="contetn_left-top contetn_lr-item"
+        title="支付终端运行稳定率"
+      >
+        <LeftTop />
       </ItemWrap>
-      <ItemWrap class="contetn_left-center contetn_lr-item" title="用户总览">
+      <ItemWrap
+        class="contetn_left-center contetn_lr-item"
+        title="接口可用性-分钟级"
+      >
         <LeftCenter />
       </ItemWrap>
       <ItemWrap
         class="contetn_left-bottom contetn_lr-item"
-        title="设备提醒"
+        title="接口响应时间<500ms"
         style="padding: 0 10px 16px 10px"
       >
         <LeftBottom />
       </ItemWrap>
     </div>
     <div class="contetn_center">
-      <CenterMap class="contetn_center_top" />
-      <ItemWrap class="contetn_center-bottom" title="安装计划">
+      <ItemWrap class="contetn_center-bottom" title="Nginx 活跃连接数">
+        <CenterTop class="contetn_center_top" />
+      </ItemWrap>
+      <ItemWrap class="contetn_center-bottom" title="Redis 连接数">
+        <CenterCenter />
+      </ItemWrap>
+      <ItemWrap class="contetn_center-bottom" title="Redis QPS">
         <CenterBottom />
       </ItemWrap>
     </div>
     <div class="contetn_right">
       <ItemWrap
         class="contetn_left-bottom contetn_lr-item"
-        title="报警次数"
+        title="自动续费失败订单数"
       >
         <RightTop />
       </ItemWrap>
       <ItemWrap
         class="contetn_left-bottom contetn_lr-item"
-        title="报警排名(TOP8)"
+        title="接口级QPS环比昨天"
         style="padding: 0 10px 16px 10px"
       >
         <RightCenter />
       </ItemWrap>
       <ItemWrap
         class="contetn_left-bottom contetn_lr-item"
-        title="数据统计图 "
+        title="接口级QPS周环比"
       >
         <RightBottom />
       </ItemWrap>
@@ -58,11 +67,13 @@
 </template>
 
 <script>
-import LeftTop from './left-top.vue'
+import LeftTop from "./left-top.vue";
 import LeftCenter from "./left-center.vue";
 import LeftBottom from "./left-bottom.vue";
-import CenterMap from "./center-map.vue";
+
+import CenterCenter from "./center-center.vue";
 import CenterBottom from "./center-bottom.vue";
+import CenterTop from "./center-top.vue";
 import RightTop from "./right-top.vue";
 import RightCenter from "./right-center.vue";
 import RightBottom from "./right-bottom.vue";
@@ -72,29 +83,25 @@ export default {
     LeftTop,
     LeftCenter,
     LeftBottom,
-    CenterMap,
+    CenterTop,
+    CenterBottom,
+    CenterCenter,
     RightTop,
     RightCenter,
     RightBottom,
-    CenterBottom,
   },
   data() {
-    return {
-    
-    };
+    return {};
   },
   filters: {
     numsFilter(msg) {
       return msg || 0;
     },
   },
-  created() {
-  },
+  created() {},
 
   mounted() {},
-  methods: {
-  
-  },
+  methods: {},
 };
 </script>
 <style lang="scss" scoped>
@@ -138,24 +145,21 @@ export default {
     flex-direction: column;
     justify-content: space-around;
     position: relative;
-
-  
   }
 }
 
-
 @keyframes rotating {
-    0% {
-        -webkit-transform: rotate(0) scale(1);
-        transform: rotate(0) scale(1);
-    }
-    50% {
-        -webkit-transform: rotate(180deg) scale(1.1);
-        transform: rotate(180deg) scale(1.1);
-    }
-    100% {
-        -webkit-transform: rotate(360deg) scale(1);
-        transform: rotate(360deg) scale(1);
-    }
+  0% {
+    -webkit-transform: rotate(0) scale(1);
+    transform: rotate(0) scale(1);
+  }
+  50% {
+    -webkit-transform: rotate(180deg) scale(1.1);
+    transform: rotate(180deg) scale(1.1);
+  }
+  100% {
+    -webkit-transform: rotate(360deg) scale(1);
+    transform: rotate(360deg) scale(1);
+  }
 }
 </style>

@@ -1,16 +1,16 @@
 <!--
  * @Author: daidai
- * @Date: 2022-03-01 14:13:04
+ * @Date: 2022-02-28 16:16:42
  * @LastEditors: Please set LastEditors
- * @LastEditTime: 2022-09-27 15:04:49
- * @FilePath: \web-pc\src\pages\big-screen\view\indexs\right-top.vue
+ * @LastEditTime: 2022-04-28 09:46:18
+ * @FilePath: \web-pc\src\pages\big-screen\view\indexs\left-center.vue
 -->
 <template>
   <Echart
-    id="rightTop"
-    :options="option"
-    class="right_top_inner"
+    id="midtop"
+    :options="options"
     v-if="pageflag"
+    class="left_center_inner"
     ref="charts"
   />
   <Reacquire v-else @onclick="getData" style="line-height: 200px">
@@ -20,22 +20,25 @@
 
 <script>
 import { currentGET } from "api/modules";
-import {graphic} from "echarts"
 export default {
   data() {
     return {
-      option: {},
-      pageflag: false,
+      options: {},
+      countUserNumData: {
+        lockNum: 0,
+        onlineNum: 0,
+        offlineNum: 0,
+        totalNum: 0,
+      },
+      pageflag: true,
       timer: null,
     };
   },
   created() {
-   
+    this.init();
+    // this.getData();
   },
-
-  mounted() {
-     this.getData();
-  },
+  mounted() {},
   beforeDestroy() {
     this.clearData();
   },
@@ -49,15 +52,17 @@ export default {
     getData() {
       this.pageflag = true;
       // this.pageflag =false
-      currentGET("big4").then((res) => {
+
+      currentGET("big1").then((res) => {
+        //只打印一次
         if (!this.timer) {
-          console.log("报警次数", res);
+          console.log("设备总览", res);
         }
         if (res.success) {
           this.countUserNumData = res.data;
           this.$nextTick(() => {
-            this.init(res.data.dateList, res.data.numList, res.data.numList2),
-              this.switper();
+            this.init();
+            this.switper();
           });
         } else {
           this.pageflag = false;
@@ -91,209 +96,140 @@ export default {
         );
       });
     },
-    init(xData, yData, yData2) {
-      this.option = {
-        xAxis: {
-          type: "category",
-          data: xData,
-          boundaryGap: false, // 不留白，从原点开始
-          splitLine: {
-            show: true,
-            lineStyle: {
-              color: "rgba(31,99,163,.2)",
-            },
-          },
-          axisLine: {
-            // show:false,
-            lineStyle: {
-              color: "rgba(31,99,163,.1)",
-            },
-          },
-          axisLabel: {
-            color: "#7EB7FD",
-            fontWeight: "500",
-          },
+    init() {
+      let total = this.countUserNumData.totalNum;
+      let colors = ["#ECA444", "#33A1DB", "#56B557"];
+      let piedata = {
+        name: "用户总览",
+        type: "pie",
+        radius: ["42%", "65%"],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 4,
+          borderColor: "rgba(0,0,0,0)",
+          borderWidth: 2,
         },
-        yAxis: {
-          type: "value",
-          splitLine: {
-            show: true,
-            lineStyle: {
-              color: "rgba(31,99,163,.2)",
-            },
-          },
-          axisLine: {
-            lineStyle: {
-              color: "rgba(31,99,163,.1)",
-            },
-          },
-          axisLabel: {
-            color: "#7EB7FD",
-            fontWeight: "500",
-          },
-        },
-        tooltip: {
-          trigger: "axis",
-          backgroundColor: "rgba(0,0,0,.6)",
-          borderColor: "rgba(147, 235, 248, .8)",
-          textStyle: {
-            color: "#FFF",
-          },
-        },
-        grid: {
-          //布局
-          show: true,
-          left: "10px",
-          right: "30px",
-          bottom: "10px",
-          top: "28px",
-          containLabel: true,
-          borderColor: "#1F63A3",
-        },
-        series: [
-          {
-            data: yData,
-            type: "line",
-            smooth: true,
-            symbol: "none", //去除点
-            name: "报警1次数",
-            color: "rgba(252,144,16,.7)",
-            areaStyle: {
-                //右，下，左，上
-                color: new graphic.LinearGradient(
-                  0,
-                  0,
-                  0,
-                  1,
-                  [
-                    {
-                      offset: 0,
-                      color: "rgba(252,144,16,.7)",
-                    },
-                    {
-                      offset: 1,
-                      color: "rgba(252,144,16,.0)",
-                    },
-                  ],
-                  false
-                ),
-            },
-            markPoint: {
-              data: [
-                {
-                  name: "最大值",
-                  type: "max",
-                  valueDim: "y",
-                  symbol: "rect",
-                  symbolSize: [60, 26],
-                  symbolOffset: [0, -20],
-                  itemStyle: {
-                    color: "rgba(0,0,0,0)",
-                  },
-                  label: {
-                    color: "#FC9010",
-                    backgroundColor: "rgba(252,144,16,0.1)",
-                    borderRadius: 6,
-                    padding: [7, 14],
-                    borderWidth: 0.5,
-                    borderColor: "rgba(252,144,16,.5)",
-                    formatter: "报警1：{c}",
-                  },
-                },
-                {
-                  name: "最大值",
-                  type: "max",
-                  valueDim: "y",
-                  symbol: "circle",
-                  symbolSize: 6,
-                  itemStyle: {
-                    color: "#FC9010",
-                    shadowColor: "#FC9010",
-                    shadowBlur: 8,
-                  },
-                  label: {
-                    formatter: "",
-                  },
-                },
-              ],
-            },
-          },
-          {
-            data: yData2,
-            type: "line",
-            smooth: true,
-            symbol: "none", //去除点
-            name: "报警2次数",
-            color: "rgba(9,202,243,.7)",
-            areaStyle: {
-                //右，下，左，上
-                color: new graphic.LinearGradient(
-                  0,
-                  0,
-                  0,
-                  1,
-                  [
-                    {
-                      offset: 0,
-                      color: "rgba(9,202,243,.7)",
-                    },
-                    {
-                      offset: 1,
-                      color: "rgba(9,202,243,.0)",
-                    },
-                  ],
-                  false
-                ),
-            },
-            markPoint: {
-              data: [
-                {
-                  name: "最大值",
-                  type: "max",
-                  valueDim: "y",
-                  symbol: "rect",
-                  symbolSize: [60, 26],
-                  symbolOffset: [0, -20],
-                  itemStyle: {
-                    color: "rgba(0,0,0,0)",
-                  },
-                  label: {
-                    color: "#09CAF3",
-                    backgroundColor: "rgba(9,202,243,0.1)",
 
-                    borderRadius: 6,
-                    borderColor: "rgba(9,202,243,.5)",
-                    padding: [7, 14],
-                    formatter: "报警2：{c}",
-                    borderWidth: 0.5,
-                  },
-                },
-                {
-                  name: "最大值",
-                  type: "max",
-                  valueDim: "y",
-                  symbol: "circle",
-                  symbolSize: 6,
-                  itemStyle: {
-                    color: "#09CAF3",
-                    shadowColor: "#09CAF3",
-                    shadowBlur: 8,
-                  },
-                  label: {
-                    formatter: "",
-                  },
-                },
-              ],
+        color: colors,
+        data: [
+          // {
+          //   value: 0,
+          //   name: "告警",
+          //   label: {
+          //     shadowColor: colors[0],
+          //   },
+          // },
+          {
+            value: this.countUserNumData.lockNum,
+            name: "锁定",
+            label: {
+              shadowColor: colors[0],
+            },
+          },
+          {
+            value: this.countUserNumData.onlineNum,
+            name: "在线",
+            label: {
+              shadowColor: colors[2],
+            },
+          },
+          {
+            value: this.countUserNumData.offlineNum,
+            name: "离线",
+            label: {
+              shadowColor: colors[1],
             },
           },
         ],
       };
+      const gaugeData = [
+        {
+          value: 20,
+          name: "未更新过期时间数量",
+          title: {
+            offsetCenter: ["-80%", "80%"],
+          },
+          detail: {
+            offsetCenter: ["-80%", "100%"],
+          },
+        },
+        {
+          value: 40,
+          name: "未开通权益数量",
+          title: {
+            offsetCenter: ["80%", "80%"],
+          },
+          detail: {
+            offsetCenter: ["80%", "100%"],
+          },
+        },
+      ];
+      this.options = {
+        series: [
+          {
+            type: "gauge",
+            anchor: {
+              show: true,
+              showAbove: true,
+              size: 18,
+              itemStyle: {
+                color: "#FAC858",
+              },
+            },
+            pointer: {
+              icon: "path://M2.9,0.7L2.9,0.7c1.4,0,2.6,1.2,2.6,2.6v115c0,1.4-1.2,2.6-2.6,2.6l0,0c-1.4,0-2.6-1.2-2.6-2.6V3.3C0.3,1.9,1.4,0.7,2.9,0.7z",
+              width: 4,
+              length: "80%",
+              offsetCenter: [0, "10%"],
+            },
+            progress: {
+              show: true,
+              overlap: true,
+              roundCap: true,
+            },
+            axisLine: {
+              roundCap: true,
+            },
+            data: gaugeData,
+            title: {
+              fontSize: 14,
+              color: "grey",
+            },
+            detail: {
+              width: 80,
+              height: 14,
+              fontSize: 14,
+              color: "white",
+              backgroundColor: "auto",
+              borderRadius: 3,
+              formatter: "{value}单",
+            },
+          },
+        ],
+      };
+      // setInterval(function () {
+      //   const random = +(Math.random() * 60).toFixed(2);
+      //   myChart.setOption({
+      //     series: [
+      //       {
+      //         data: [
+      //           {
+      //             value: random,
+      //           },
+      //         ],
+      //       },
+      //       {
+      //         data: [
+      //           {
+      //             value: random,
+      //           },
+      //         ],
+      //       },
+      //     ],
+      //   });
+      // }, 2000);
     },
   },
 };
 </script>
-<style lang='scss' scoped>
-.right_top_inner {
-  margin-top: -8px;
-}
-</style>
+<style lang="scss" scoped></style>

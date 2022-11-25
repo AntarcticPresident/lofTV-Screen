@@ -1,33 +1,63 @@
+<!--
+ * @Author: daidai
+ * @Date: 2022-03-01 14:13:04
+ * @LastEditors: Please set LastEditors
+ * @LastEditTime: 2022-05-07 11:17:49
+ * @FilePath: \web-pc\src\pages\big-screen\view\indexs\right-top.vue
+-->
 <template>
-  <div class="center_bottom">
-    <Echart
-      :options="options"
-      id="bottomLeftChart"
-      class="echarts_bottom"
-    ></Echart>
-  </div>
+  <Echart
+    id="rightTop"
+    :options="option"
+    class="right_top_inner"
+    v-if="pageflag"
+    ref="charts"
+  />
+  <Reacquire v-else @onclick="getData" style="line-height: 200px">
+    重新获取
+  </Reacquire>
 </template>
 
 <script>
-import { currentGET } from "api";
+import { currentGET } from "api/modules";
 import { graphic } from "echarts";
+
 export default {
   data() {
     return {
-      options: {},
+      option: {},
+      pageflag: false,
+      timer: null,
     };
   },
-  props: {},
-  mounted() {
+  created() {
     this.getData();
   },
+
+  mounted() {},
+  beforeDestroy() {
+    this.clearData();
+  },
   methods: {
+    clearData() {
+      if (this.timer) {
+        clearInterval(this.timer);
+        this.timer = null;
+      }
+    },
     getData() {
       this.pageflag = true;
-      currentGET("big6", { companyName: this.companyName }).then((res) => {
-        console.log("安装计划", res);
+      // this.pageflag =false
+      currentGET("big4").then((res) => {
+        if (!this.timer) {
+          console.log("报警次数", res);
+        }
         if (res.success) {
-          this.init(res.data);
+          this.countUserNumData = res.data;
+          this.$nextTick(() => {
+            this.init(res.data.dateList, res.data.numList, res.data.numList2),
+              this.switper();
+          });
         } else {
           this.pageflag = false;
           this.$Message({
@@ -37,8 +67,70 @@ export default {
         }
       });
     },
-    init(newData) {
-      this.options = {
+    //轮询
+    switper() {
+      if (this.timer) {
+        return;
+      }
+      let looper = (a) => {
+        this.getData();
+      };
+      this.timer = setInterval(
+        looper,
+        this.$store.state.setting.echartsAutoTime
+      );
+      let myChart = this.$refs.charts.chart;
+      myChart.on("mouseover", (params) => {
+        this.clearData();
+      });
+      myChart.on("mouseout", (params) => {
+        this.timer = setInterval(
+          looper,
+          this.$store.state.setting.echartsAutoTime
+        );
+      });
+    },
+    init(xData, yData, yData2) {
+      this.option = {
+        xAxis: {
+          type: "category",
+          data: xData,
+          boundaryGap: false, // 不留白，从原点开始
+          splitLine: {
+            show: true,
+            lineStyle: {
+              color: "rgba(31,99,163,.2)",
+            },
+          },
+          axisLine: {
+            // show:false,
+            lineStyle: {
+              color: "rgba(31,99,163,.1)",
+            },
+          },
+          axisLabel: {
+            color: "#7EB7FD",
+            fontWeight: "500",
+          },
+        },
+        yAxis: {
+          type: "value",
+          splitLine: {
+            show: true,
+            lineStyle: {
+              color: "rgba(31,99,163,.2)",
+            },
+          },
+          axisLine: {
+            lineStyle: {
+              color: "rgba(31,99,163,.1)",
+            },
+          },
+          axisLabel: {
+            color: "#7EB7FD",
+            fontWeight: "500",
+          },
+        },
         tooltip: {
           trigger: "axis",
           backgroundColor: "rgba(0,0,0,.6)",
@@ -46,126 +138,156 @@ export default {
           textStyle: {
             color: "#FFF",
           },
-          formatter: function (params) {
-            // 添加单位
-            var result = params[0].name + "<br>";
-            params.forEach(function (item) {
-              if (item.value) {
-                if (item.seriesName == "安装率") {
-                  result +=
-                    item.marker +
-                    " " +
-                    item.seriesName +
-                    " : " +
-                    item.value +
-                    "%</br>";
-                } else {
-                  result +=
-                    item.marker +
-                    " " +
-                    item.seriesName +
-                    " : " +
-                    item.value +
-                    "个</br>";
-                }
-              } else {
-                result += item.marker + " " + item.seriesName + " :  - </br>";
-              }
-            });
-            return result;
-          },
-        },
-        legend: {
-          data: ["已安装", "计划安装", "安装率"],
-          textStyle: {
-            color: "#B4B4B4",
-          },
-          top: "0",
         },
         grid: {
-          left: "50px",
-          right: "40px",
-          bottom: "30px",
-          top: "20px",
+          //布局
+          show: true,
+          left: "10px",
+          right: "30px",
+          bottom: "10px",
+          top: "28px",
+          containLabel: true,
+          borderColor: "#1F63A3",
         },
-        xAxis: {
-          data: newData.category,
-          axisLine: {
-            lineStyle: {
-              color: "#B4B4B4",
-            },
-          },
-          axisTick: {
-            show: false,
-          },
-        },
-        yAxis: [
-          {
-            splitLine: { show: false },
-            axisLine: {
-              lineStyle: {
-                color: "#B4B4B4",
-              },
-            },
-
-            axisLabel: {
-              formatter: "{value}",
-            },
-          },
-          {
-            splitLine: { show: false },
-            axisLine: {
-              lineStyle: {
-                color: "#B4B4B4",
-              },
-            },
-            axisLabel: {
-              formatter: "{value}% ",
-            },
-          },
-        ],
         series: [
           {
-            name: "已安装",
-            type: "bar",
-            barWidth: 10,
-            itemStyle: {
-              borderRadius: 5,
-              color: new graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: "#956FD4" },
-                { offset: 1, color: "#3EACE5" },
-              ]),
-            },
-            data: newData.barData,
-          },
-          {
-            name: "计划安装",
-            type: "bar",
-            barGap: "-100%",
-            barWidth: 10,
-            itemStyle: {
-              borderRadius: 5,
-              color: new graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: "rgba(156,107,211,0.8)" },
-                { offset: 0.2, color: "rgba(156,107,211,0.5)" },
-                { offset: 1, color: "rgba(156,107,211,0.2)" },
-              ]),
-            },
-            z: -12,
-            data: newData.lineData,
-          },
-          {
-            name: "安装率",
+            data: yData,
             type: "line",
             smooth: true,
-            showAllSymbol: true,
-            symbol: "emptyCircle",
-            symbolSize: 8,
-            yAxisIndex: 1,
-            itemStyle: {
-              color: "#F02FC2",
+            symbol: "none", //去除点
+            name: "电商nginx",
+            color: "rgba(252,144,16,.7)",
+            areaStyle: {
+              normal: {
+                //右，下，左，上
+                color: new graphic.LinearGradient(
+                  0,
+                  0,
+                  0,
+                  1,
+                  [
+                    {
+                      offset: 0,
+                      color: "rgba(252,144,16,.7)",
+                    },
+                    {
+                      offset: 1,
+                      color: "rgba(252,144,16,.0)",
+                    },
+                  ],
+                  false
+                ),
+              },
             },
-            data: newData.rateData,
+            markPoint: {
+              data: [
+                {
+                  name: "最大值",
+                  type: "max",
+                  valueDim: "y",
+                  symbol: "rect",
+                  symbolSize: [60, 26],
+                  symbolOffset: [0, -20],
+                  itemStyle: {
+                    color: "rgba(0,0,0,0)",
+                  },
+                  label: {
+                    color: "#FC9010",
+                    backgroundColor: "rgba(252,144,16,0.1)",
+                    borderRadius: 6,
+                    padding: [7, 14],
+                    borderWidth: 0.5,
+                    borderColor: "rgba(252,144,16,.5)",
+                    formatter: "电商：{c}",
+                  },
+                },
+                {
+                  name: "最大值",
+                  type: "max",
+                  valueDim: "y",
+                  symbol: "circle",
+                  symbolSize: 6,
+                  itemStyle: {
+                    color: "#FC9010",
+                    shadowColor: "#FC9010",
+                    shadowBlur: 8,
+                  },
+                  label: {
+                    formatter: "",
+                  },
+                },
+              ],
+            },
+          },
+          {
+            data: yData2,
+            type: "line",
+            smooth: true,
+            symbol: "none", //去除点
+            name: "支付nginx",
+            color: "rgba(9,202,243,.7)",
+            areaStyle: {
+              normal: {
+                //右，下，左，上
+                color: new graphic.LinearGradient(
+                  0,
+                  0,
+                  0,
+                  1,
+                  [
+                    {
+                      offset: 0,
+                      color: "rgba(9,202,243,.7)",
+                    },
+                    {
+                      offset: 1,
+                      color: "rgba(9,202,243,.0)",
+                    },
+                  ],
+                  false
+                ),
+              },
+            },
+            markPoint: {
+              data: [
+                {
+                  name: "最大值",
+                  type: "max",
+                  valueDim: "y",
+                  symbol: "rect",
+                  symbolSize: [60, 26],
+                  symbolOffset: [0, -20],
+                  itemStyle: {
+                    color: "rgba(0,0,0,0)",
+                  },
+                  label: {
+                    color: "#09CAF3",
+                    backgroundColor: "rgba(9,202,243,0.1)",
+
+                    borderRadius: 6,
+                    borderColor: "rgba(9,202,243,.5)",
+                    padding: [7, 14],
+                    formatter: "支付：{c}",
+                    borderWidth: 0.5,
+                  },
+                },
+                {
+                  name: "最大值",
+                  type: "max",
+                  valueDim: "y",
+                  symbol: "circle",
+                  symbolSize: 6,
+                  itemStyle: {
+                    color: "#09CAF3",
+                    shadowColor: "#09CAF3",
+                    shadowBlur: 8,
+                  },
+                  label: {
+                    formatter: "",
+                  },
+                },
+              ],
+            },
           },
         ],
       };
@@ -174,13 +296,7 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
-.center_bottom {
-  width: 100%;
-  height: 100%;
-
-  .echarts_bottom {
-    width: 100%;
-    height: 100%;
-  }
+.right_top_inner {
+  margin-top: -8px;
 }
 </style>
